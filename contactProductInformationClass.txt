@@ -1,0 +1,77 @@
+public with sharing class contactProductInformationClass 
+{
+
+    @auraEnabled
+    public static list<Case> getCaseDetails1(Id caseId)
+    {
+        return [ SELECT ID,CaseNumber,Subject,Contact.FirstName,Contact.LastName,Contact.Name,Contact.Product__c,Contact.Product__r.Name,Contact.Product__r.Family,Contact.Home_Country__c
+        FROM Case where id =: caseId LIMIT 10
+        ];
+    }
+    
+    @auraEnabled
+    public static wrapperClass getCaseDetails(Id caseId)
+    {
+        System.debug('CaseID: '+ caseId);
+        
+        for(Case caseObject : [SELECT ID,CaseNumber,Subject,Contact.FirstName,Contact.LastName,Contact.Name,Contact.Product__c,Contact.Product__r.Name,Contact.Product__r.Family,Contact.Home_Country__c FROM Case where id =: caseId])
+        {
+            wrapperClass wrapperObject = new wrapperClass(caseObject);
+            return wrapperObject;
+        }
+        
+        
+        return null;
+    }
+    
+    
+    //Wrapper Class to get the combination of Case, Contact and pricebook Associated...
+    public class wrapperClass
+    {
+        @AuraEnabled
+        public Case caseObject {get;set;}
+        @AuraEnabled
+        public string productPrice {get;set;}
+        //For Constructors...
+        public wrapperClass(Case tempCaseObject)
+        {
+            caseObject = tempCaseObject;
+            
+            productPrice = 'N/A';
+            
+            //Query Product Price...
+            
+            if(caseObject.Contact.Product__c != null && caseObject.Contact.Home_Country__c != null)
+            {
+                Pricebook2 pricebookObject = [SELECT ID,Name FROM Pricebook2 where Name =: caseObject.Contact.Home_Country__c AND IsActive =: true];
+                
+                if(pricebookObject != null)
+                {
+                    for(PricebookEntry priceEntryObject : [SELECT ID, Pricebook2Id,Product2Id, UnitPrice FROM PricebookEntry where Product2Id =: caseObject.Contact.Product__c AND Pricebook2Id =: pricebookObject.id AND isactive =: true])
+                    {
+                        if(caseObject.Contact.Product__r.Family ==  'ATM Fee in other currencies')
+                        {
+                            
+                            if(priceEntryObject.UnitPrice == 0.00)
+                                productPrice = 'Free';
+                            else
+                                productPrice = string.valueof(priceEntryObject.UnitPrice) + '%';
+                        }
+                        else
+                            productPrice = '€ ' + string.valueof(priceEntryObject.UnitPrice);
+                        System.debug('Product Price: '+ productPrice);
+                    }
+                }
+            
+            }
+            
+            
+        }
+        
+    
+    }
+       
+    
+
+
+}
