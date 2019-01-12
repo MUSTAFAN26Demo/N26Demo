@@ -1,0 +1,87 @@
+<aura:component description="caseProductDetails"
+      implements="force:appHostable,flexipage:availableForAllPageTypes,force:hasRecordId,force:hasSObjectName"
+      controller="contactProductInformationClass"
+      access="global">
+    <!-- Id of the Account the page hosting this component is showing -->
+    <aura:attribute name="recordId" type="Id" />
+	<aura:attribute name="caseDetails" type="contactProductInformationClass.wrapperClass"/>
+    
+
+
+	<aura:handler name="init" value="{!this}" action="{!c.loadCaseDetails}"/>
+    
+    <aura:dependency resource="markup://force:editRecord" type="EVENT" />
+    
+    <aura:handler event="force:refreshView" action="{!c.loadCaseDetails}" />
+
+	
+    <div class="slds-card">
+        <div class="slds-card__body slds-card__body_inner slds-p-top_medium">
+            <div class="slds-text-title_bold">        
+            	Contact Product Information
+			</div>
+        </div>
+        <div class="slds-card__body slds-card__body_inner slds-p-top_medium">
+            <table class="myClass slds-table slds-table--bordered slds-table--cell-buffer">
+                
+                <thead>
+                    <tr class="slds-text-heading--label">
+                        
+                        <th scope="col">
+                            <div class="slds-truncate" title="LineItem"> - </div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Details">Details</div>
+                        </th>
+                        <!-- <th scope="col">
+                            <div class="slds-truncate" title="Product Detail">Detail</div>
+                        </th>
+                        <th scope="col">
+                            <div class="slds-truncate" title="Product Price">Price {!v.caseDetails.caseObject.Contact.Product__r.Name}</div>
+                        </th> -->
+                    </tr>
+                </thead>
+                <tbody> 
+                    
+                    <tr>  
+                        <td>Product Name</td>
+                        <td>{!v.caseDetails.caseObject.Contact.Product__r.Name}</td>
+                    </tr>
+                    <tr>  
+                        <td>Product Family</td>
+                        <td>{!v.caseDetails.caseObject.Contact.Product__r.Family}</td>
+                    </tr>
+        
+                    <tr>  
+                        <td>Home Country</td>
+                        <td>{!v.caseDetails.caseObject.Contact.Home_Country__c}</td>
+                    </tr>
+                    
+                                
+                    <tr>  
+                        <td>Product Price</td>
+                        <td>{!v.caseDetails.productPrice}</td>
+                    </tr>
+                    
+                    <!-- <aura:iteration items="{!v.caseDetails}" var="cs">
+                    <tr>
+                        <td>{!cs.Contact.Product__r.Name}</td>
+                        <td>{!cs.Contact.Home_Country__c}</td>
+                        <td>{!cs.Contact.Product__r.Family}</td>
+                        <td></td>
+                        
+                    </tr>
+                </aura:iteration> -->
+                </tbody>
+            </table>
+        </div>
+        
+        
+    </div>
+    
+    
+    
+    
+    
+    
+</aura:component>
