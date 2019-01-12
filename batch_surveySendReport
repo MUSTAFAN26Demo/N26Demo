@@ -1,0 +1,148 @@
+global class batch_surveySendReport implements Schedulable,Database.Batchable<sObject>,Database.AllowsCallouts
+{
+    
+    //For Batchable Interface...
+    global Database.QueryLocator start(Database.BatchableContext BC)
+    {
+        
+        //To limit Query to get the Today or Previous Survey's which we were unable to send because of SFDC Daily Email LIMIT  
+        String query = 'Select Id,firstName,lastName,Language__c, Email, Survey_Date__c FROM Contact where Survey_Date__c <= TODAY AND email != null LIMIT 10';
+        return Database.getQueryLocator(query);
+    }
+    
+    global void execute( Database.BatchableContext BC, List<Contact> scope )
+    {
+        List<Contact> successContactEmailList = new List<Contact>();
+            
+        integer counter = 0;
+        List<Messaging.SingleEmailMessage> emailList = new List<Messaging.SingleEmailMessage>();
+        Map<integer,Contact > contactMap = new Map<integer, Contact >();
+        
+        try
+        {
+            if(scope.size() > 0 )
+            {
+                for(Contact contactObject : scope)
+                {
+                    
+                    Integer used = Limits.getEmailInvocations();
+                    Integer emailLimit = Limits.getLimitEmailInvocations();
+                    
+                    System.debug('Used: '+ used + ' , EmailLimit :' + emailLimit);
+                    //To make sure we only send email with in the SFDC email transactional limit ...
+                    if(used <= emailLimit)
+                    {
+                        //try-catch for the Email Daily Limit 
+                        try
+                        {
+                            //To know the daily limit for the org would be exceeded by this request   
+                            Messaging.reserveSingleEmailCapacity(1);
+                            
+                            try //Send Email Try catch for Any incorrect EMail...
+                            {
+                                //System.debug('Email Sending');
+                                Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+                                if(contactObject.Language__c == 'DE')
+                                    mail.setHtmlBody('Hey '+ contactObject.firstName + ', bitte fülle unsere Umfrage aus: http://n26.com/survey/'+ contactObject.id);
+                                else 
+                                    mail.setHtmlBody('Hey '+ contactObject.firstName + ', please fill out our survey: http://n26.com/survey/'+ contactObject.id);
+                                //mail.setSubject(DataTranslationHelper.translate(System.Label.CaseSolvedSubject,caseObject.LanguageCode__c)+' '+ caseObject.Subject);
+                                mail.setSubject('N26 Survey');
+                                mail.setToAddresses(new String[]{contactObject.Email}); 
+                                mail.setCharset('UTF-8');
+                                mail.setSenderDisplayName('N26 Customer Service');
+                                mail.setTargetObjectId(contactObject.Id);
+                                
+                                //Sending email...
+                                Messaging.SendEmailResult [] result = Messaging.sendEmail(new Messaging.SingleEmailMessage[] {mail});
+                                
+                                if( result[0].isSuccess()) 
+                                {
+                                    //Updating the Survey Date with null...
+                                    contactObject.Survey_Date__c = null;        
+                                    successContactEmailList.add(contactObject);
+                                }
+                        
+                            }
+                            catch(Exception emailSendException) 
+                            {
+                                System.debug('Email Send Exception:'+ emailSendException);
+                            }
+                            
+                            
+                            
+                            //Increment Counter...
+                            counter++;
+                            
+                        }catch(Exception dailyLimitException)
+                        {
+                            System.debug('Daily Email Send Exception:'+ dailyLimitException);
+                            break;
+                        }
+                    
+                    
+                    }
+                    
+                }
+                
+                //Sending Emails and Updating Contact Records on successful Email Sent...
+                if(successContactEmailList.size() > 0)
+                    upsert successContactEmailList;
+                             
+            
+            }
+            
+            
+            
+        
+        }
+        catch(Exception exp)
+        {
+            System.debug('Exception '+ exp);
+        }
+        
+    }
+    
+    
+    global void finish( Database.BatchableContext BC )
+    {
+    
+        //calling Batch Execution...
+        //Database.executeBatch(new batch_pushSFDCAssetUpdatesInMPX());
+    }
+    
+    //For Schedulable Apex....
+    global void execute(SchedulableContext scon) 
+    {
+        try{
+            Database.executeBatch(new batch_surveySendReport());
+            rerun(scon.getTriggerId());
+        }
+        catch(Exception exp) {rerun(scon.getTriggerId());}
+        //Reruning the values...
+        
+    }
+    
+    global void rerun(string jobId) 
+    {
+        
+        
+        DateTime currentTime = system.now();
+        DateTime nextRunTime = currentTime.adddays(1);
+        
+        string sch = '0 '+ nextRunTime.minute() + ' ' + nextRunTime.hour() + ' ' + nextRunTime.day() + ' ' + nextRunTime.month() + ' ? ' + nextRunTime.year();
+        
+        
+        for(CronTrigger ct:  [ SELECT ID from CronTrigger where id =: jobId] )
+        {
+            System.abortJob(ct.id);
+        }
+        
+        
+        system.schedule('Survey Execution :'+ System.now(), sch , new batch_surveySendReport());
+        
+    }
+    
+    
+    
+}
