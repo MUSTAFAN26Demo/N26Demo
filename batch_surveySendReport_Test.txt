@@ -1,0 +1,63 @@
+@IsTest
+public class batch_surveySendReport_Test 
+{
+
+    public static void createData()
+    {
+        //Account Creation
+        Account accountObject = new Account();
+        accountObject.Name = 'Test Account';
+        insert accountObject;
+   
+   
+        //Contact Creation
+        List<Contact> contactList = new List<Contact>();
+        
+        for(integer counter = 1; counter<=10;counter++)
+        {
+            Contact contactObject = new Contact();
+            contactObject.AccountId = accountObject.id;
+            contactObject.FirstName = 'Test English';
+            contactObject.LastName = string.valueof(counter);
+            contactObject.Survey_Date__c = System.today();
+            if(counter > 5)
+                contactObject.Language__c = 'EN';
+            else
+                contactObject.Language__c = 'DE';
+            contactObject.Email = 'test'+counter+ '@test.com';
+            //Adding in the list...
+            contactList.add(contactObject);
+            
+            
+        }
+        
+        //Upserting Contact...
+        if(contactList.size() > 0)
+            upsert contactList;
+            
+                
+    }    
+
+    
+    static testMethod void testValidationMethod() 
+    {
+        //Creating the test data...
+        CreateData();
+        
+        
+        Test.startTest();
+        Datetime sysTime = System.now();
+        
+        sysTime = sysTime.adddays(1);
+        String chron_exp = '' + sysTime.second() + ' ' + sysTime.minute() + ' ' + sysTime.hour() + ' ' + sysTime.day() + ' ' + sysTime.month() + ' ? ' + sysTime.year();
+        system.debug(chron_exp);
+        batch_surveySendReport pushClass = new batch_surveySendReport();
+        //Schedule the next job, and give it the system time so name is unique
+        System.schedule('Push Survey Email Scheduler : ' + sysTime.getTime(),chron_exp, pushClass );
+        Database.executeBatch(new batch_surveySendReport());
+        
+            
+        Test.stopTest();
+
+    }
+}

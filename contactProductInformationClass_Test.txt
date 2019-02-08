@@ -1,0 +1,176 @@
+@IsTest
+public class contactProductInformationClass_Test 
+{
+
+    public static List<Case> caseListPublic {get;set;}
+
+    public static void createData()
+    {
+    
+        //Pricebook Creation
+        
+        Pricebook2 pb1 = new pricebook2(name='IT', isActive=true);
+        insert pb1;
+        
+        Pricebook2 pb2 = new pricebook2(name='ES',isActive=true);
+        insert pb2;
+        
+        Pricebook2 pb3 = new pricebook2(name='DE',isActive=true);
+        insert pb3;
+        
+        Pricebook2 pb4 = new pricebook2(name='UK',isActive=true);
+        insert pb4;
+        
+        Pricebook2 pb5 = new pricebook2(name='FR',isActive=true);
+        insert pb5;    
+        
+        
+        //insert a new product
+        Product2 p1 = new product2(name='Standard', Family = 'Cost per Calendar Month');
+        insert p1;
+        
+        Product2 p2 = new product2(name='Metal',Family = 'ATM Fee in other currencies');
+        insert p2;
+        
+        Product2 p3 = new product2(name='Black', Family = 'Card Replacement Cost' );
+        insert p3;        
+        
+        //Pricebook Entries...
+        List<PricebookEntry> priceEntryList = new List<PricebookEntry>();
+        
+        
+        //standard pricebook entry...
+        PricebookEntry pbestd1 = new PricebookEntry(pricebook2id=Test.getStandardPricebookId(), product2id=p1.id,unitprice=0.0, isActive=true);
+        priceEntryList.add(pbestd1);
+        PricebookEntry pbestd2 = new PricebookEntry(pricebook2id=Test.getStandardPricebookId(), product2id=p2.id,unitprice=0.0, isActive=true);
+        priceEntryList.add(pbestd2);
+        PricebookEntry pbestd3 = new PricebookEntry(pricebook2id=Test.getStandardPricebookId(), product2id=p3.id,unitprice=0.0, isActive=true);
+        priceEntryList.add(pbestd3);
+        //Custom Pricebook Entries...
+        PricebookEntry pbe1 = new PricebookEntry(pricebook2id=pb1.id, product2id=p1.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe1);
+        PricebookEntry pbe2 = new PricebookEntry(pricebook2id=pb2.id, product2id=p1.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe2);
+        PricebookEntry pbe3 = new PricebookEntry(pricebook2id=pb3.id, product2id=p1.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe3);
+        PricebookEntry pbe4 = new PricebookEntry(pricebook2id=pb4.id, product2id=p1.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe4);
+        PricebookEntry pbe5 = new PricebookEntry(pricebook2id=pb5.id, product2id=p1.id,unitprice=0.0, isActive=true);
+        priceEntryList.add(pbe5);
+        PricebookEntry pbe6 = new PricebookEntry(pricebook2id=pb1.id, product2id=p2.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe6);
+        PricebookEntry pbe7 = new PricebookEntry(pricebook2id=pb2.id, product2id=p2.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe7);
+        PricebookEntry pbe8 = new PricebookEntry(pricebook2id=pb3.id, product2id=p2.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe8);
+        PricebookEntry pbe9 = new PricebookEntry(pricebook2id=pb4.id, product2id=p2.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe9);
+        PricebookEntry pbe10 = new PricebookEntry(pricebook2id=pb5.id, product2id=p2.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe10);
+        PricebookEntry pbe11 = new PricebookEntry(pricebook2id=pb1.id, product2id=p3.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe11);
+        PricebookEntry pbe12 = new PricebookEntry(pricebook2id=pb2.id, product2id=p3.id,unitprice=9.0, isActive=true);
+        priceEntryList.add(pbe12);
+        PricebookEntry pbe13 = new PricebookEntry(pricebook2id=pb3.id, product2id=p3.id,unitprice=0.0, isActive=true);
+        priceEntryList.add(pbe13);
+        PricebookEntry pbe14 = new PricebookEntry(pricebook2id=pb4.id, product2id=p3.id,unitprice=0.0, isActive=true);
+        priceEntryList.add(pbe14);
+        PricebookEntry pbe15 = new PricebookEntry(pricebook2id=pb5.id, product2id=p3.id,unitprice=0.0, isActive=true);
+        priceEntryList.add(pbe15);
+
+        //inserting the vlaues..
+        upsert priceEntryList;
+
+        
+        //Account Creation
+        Account accountObject = new Account();
+        accountObject.Name = 'Test Account';
+        insert accountObject;
+   
+   
+        //Contact Creation
+        List<Contact> contactList = new List<Contact>();
+        
+        for(integer counter = 1; counter<=10;counter++)
+        {
+            Contact contactObject = new Contact();
+            contactObject.AccountId = accountObject.id;
+            contactObject.FirstName = 'Test English';
+            contactObject.LastName = string.valueof(counter);
+            contactObject.Survey_Date__c = System.today();
+            if(counter > 5)
+                contactObject.Language__c = 'EN';
+            else
+                contactObject.Language__c = 'DE';
+            contactObject.Email = 'test'+counter+ '@test.com';
+            
+            if(counter <=3)
+            {
+                contactObject.Product__c = p1.id;
+                contactObject.Home_Country__c = 'IT';
+            }
+            else if(counter >3 && counter <=6)
+            {
+                contactObject.Product__c = p2.id;
+                contactObject.Home_Country__c = 'DE';
+            }
+            else
+            {
+                contactObject.Product__c = p3.id;
+                contactObject.Home_Country__c = 'UK';        
+            }
+            //Adding in the list...
+            contactList.add(contactObject);
+            
+            
+        }
+        
+        //Upserting Contact...
+        if(contactList.size() > 0)
+            upsert contactList;
+         
+        List<Case> caseList = new List<Case>();
+            
+        //Creating case against each contact
+        for(Contact contactObject: contactList)
+        {
+            Case caseObject = new Case();
+            caseObject.Subject = contactObject.FirstName + ' Case';
+            caseObject.AccountId = accountObject.id;
+            caseObject.contactId = contactObject.id;
+            //adding the list...
+            caseList.add(caseObject); 
+        
+        }
+        
+        
+        if(caseList.size() > 0)
+            upsert caseList;    
+            
+            
+        caseListPublic = caseList;
+                
+    }    
+
+    
+    static testMethod void testValidationMethod() 
+    {
+        //Creating the test data...
+        CreateData();
+        
+        
+        Test.startTest();
+        
+        
+        for(Case caseObject : caseListPublic)
+        {
+            
+            List<case> tempList = contactProductInformationClass.getCaseDetails1(caseObject.id);
+            contactProductInformationClass.wrapperClass tempList1 = contactProductInformationClass.getCaseDetails(caseObject.id);
+            
+        
+        }
+        
+
+    }
+}
